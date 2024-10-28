@@ -1,0 +1,70 @@
+Activation Functions : 
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sympy import symbols, exp, simplify
+
+# Define the symbol for symbolic computation
+x = symbols('x')
+
+def threshold(x):
+    return 1 if x >= 0 else 0
+
+def sigmoid(x):
+    return simplify(1 / (1 + exp(-x)))
+
+def tan_h(x):
+    return simplify((exp(x) - exp(-x)) / (exp(x) + exp(-x)))
+
+def ReLU(x):
+    return max(0, x)
+
+def LeakyReLU(alpha, x):
+    return alpha * x if x < 0 else x
+
+# Take input from the user
+y = float(input("Enter the value of x: "))
+print("Threshold function: ", threshold(y))
+print("Sigmoid function: ", sigmoid(x).subs(x, y))
+print("Tan h function: ", tan_h(x).subs(x, y))
+print("ReLU function: ", ReLU(y))
+print("Leaky ReLU: ", LeakyReLU(0.01, y))  
+
+# Prepare data for plotting
+x_values = np.linspace(-10, 10, 400)
+threshold_values = [threshold(x_val) for x_val in x_values]
+sigmoid_values = [sigmoid(val).evalf() for val in x_values]
+tanh_values = [tan_h(val).evalf() for val in x_values]
+relu_values = [ReLU(val) for val in x_values]
+leaky_relu_values = [LeakyReLU(0.01, val) for val in x_values]
+
+# Plotting
+plt.figure(figsize=(10, 8))
+
+plt.subplot(3, 2, 1)
+plt.plot(x_values, threshold_values, label='Threshold', color='blue')
+plt.title('Threshold Function')
+plt.grid()
+
+plt.subplot(3, 2, 2)
+plt.plot(x_values, sigmoid_values, label='Sigmoid', color='orange')
+plt.title('Sigmoid Function')
+plt.grid()
+
+plt.subplot(3, 2, 3)
+plt.plot(x_values, tanh_values, label='Tanh', color='green')
+plt.title('Tanh Function')
+plt.grid()
+
+plt.subplot(3, 2, 4)
+plt.plot(x_values, relu_values, label='ReLU', color='red')
+plt.title('ReLU Function')
+plt.grid()
+
+plt.subplot(3, 2, 5)
+plt.plot(x_values, leaky_relu_values, label='Leaky ReLU', color='purple')
+plt.title('Leaky ReLU Function')
+plt.grid()
+
+plt.tight_layout()
+plt.show()
