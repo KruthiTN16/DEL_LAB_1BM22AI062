@@ -1,0 +1,35 @@
+
+import numpy as np
+
+class Neuron:
+    def __init__(self, input_size):
+        self.weights = np.random.rand(input_size)
+        self.bias = np.random.rand()
+
+    def sigmoid(self, x):
+        return 1 / (1 + np.exp(-x))
+
+    def tanh(self, x):
+        return np.tanh(x)
+
+    def relu(self, x):
+        return np.maximum(0, x)
+
+    def forward(self, inputs, activation='sigmoid'):
+        z = np.dot(inputs, self.weights) + self.bias
+        if activation == 'sigmoid':
+            return self.sigmoid(z)
+        elif activation == 'tanh':
+            return self.tanh(z)
+        elif activation == 'relu':
+            return self.relu(z)
+        else:
+            raise ValueError("Invalid activation function")
+
+# Test the neuron with a sample input
+inputs = np.array([0.5, 0.2, 0.1])
+neuron = Neuron(input_size=3)
+
+for activation in ['sigmoid', 'tanh', 'relu']:
+    output = neuron.forward(inputs, activation)
+    print(f"Output with {activation} activation: {output}")
