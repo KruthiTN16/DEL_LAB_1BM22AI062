@@ -1,0 +1,86 @@
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+# Load the dataset
+data = pd.read_csv('diabetes.csv')  # Ensure you have this file in your directory
+
+# Features and target
+X = data.drop('Outcome', axis=1).values
+y = data['Outcome'].values
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Standardize the features
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+# Define activation functions
+def relu(x):
+    return np.maximum(0, x)
+
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+def sigmoid_derivative(x):
+    return x * (1 - x)
+
+# Perceptron class
+class SingleLayerPerceptron:
+    def __init__(self, input_size, learning_rate=0.01, epochs=1000, initial_weights=None):
+        self.learning_rate = learning_rate
+        self.epochs = epochs
+        # Initialize weights; if no initial weights are provided, random weights are used
+        if initial_weights is None:
+            self.weights = np.random.rand(input_size + 1)  # +1 for bias
+        else:
+            self.weights = np.array(initial_weights)  # Ensure weights are a numpy array
+
+    def fit(self, X, y):
+        for epoch in range(self.epochs):
+            for i in range(X.shape[0]):
+                # Adding bias
+                xi = np.insert(X[i], 0, 1)  # Add bias term
+                linear_output = np.dot(xi, self.weights)
+                relu_output = relu(linear_output)
+                y_pred = sigmoid(relu_output)
+
+                # Update weights
+                error = y[i] - y_pred
+                self.weights += self.learning_rate * error * sigmoid_derivative(y_pred) * xi
+
+    def predict(self, X):
+        linear_output = np.dot(np.insert(X, 0, 1, axis=1), self.weights)
+        relu_output = relu(linear_output)
+        return (sigmoid(relu_output) >= 0.5).astype(int)
+
+# Example usage
+input_size = X_train.shape[1]
+
+# Get user input for initial weights
+try:
+    user_input = input(f"Enter {input_size + 1} initial weights (space-separated) for {input_size} features + bias: ")
+    initial_weights = list(map(float, user_input.split()))
+    
+    # Check if the number of weights is correct
+    if len(initial_weights) != input_size + 1:
+        raise ValueError(f"Expected {input_size + 1} weights, got {len(initial_weights)}.")
+    
+    perceptron = SingleLayerPerceptron(input_size, initial_weights=initial_weights)
+
+except ValueError as e:
+    print(e)
+    exit(1)
+
+# Train the perceptron
+perceptron.fit(X_train, y_train)
+
+# Make predictions
+predictions = perceptron.predict(X_test)
+
+# Evaluate the model
+accuracy = np.mean(predictions == y_test)
+print(f'Accuracy: {accuracy * 100:.2f}%')
