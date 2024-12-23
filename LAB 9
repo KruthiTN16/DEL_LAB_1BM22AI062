@@ -1,0 +1,77 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import yfinance as yf
+from sklearn.preprocessing import MinMaxScaler
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import GRU, Dense, Dropout
+
+# Step 1: Fetch and preprocess the stock market data
+# Fetch historical stock price data
+def get_stock_data(ticker, start_date="2015-01-01", end_date="2023-01-01"):
+    data = yf.download(ticker, start=start_date, end=end_date)
+    return data["Close"]
+
+# Select a ticker and fetch data
+ticker = "AAPL"  # Replace with desired ticker symbol
+prices = get_stock_data(ticker).values.reshape(-1, 1)
+
+# Normalize the prices
+scaler = MinMaxScaler(feature_range=(0, 1))
+scaled_prices = scaler.fit_transform(prices)
+
+# Prepare sequences for training
+def create_sequences(data, seq_length):
+    x, y = [], []
+    for i in range(seq_length, len(data)):
+        x.append(data[i - seq_length:i, 0])
+        y.append(data[i, 0])
+    return np.array(x), np.array(y)
+
+sequence_length = 60  # Use last 60 days to predict the next day's price
+x_data, y_data = create_sequences(scaled_prices, sequence_length)
+
+# Split into training and testing sets
+split = int(len(x_data) * 0.8)
+x_train, x_test = x_data[:split], x_data[split:]
+y_train, y_test = y_data[:split], y_data[split:]
+
+# Reshape inputs for GRU
+x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], 1))
+x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], 1))
+
+# Step 2: Build the GRU model
+model = Sequential([
+    GRU(64, return_sequences=True, input_shape=(x_train.shape[1], 1)),
+    Dropout(0.2),
+    GRU(64, return_sequences=False),
+    Dropout(0.2),
+    Dense(32, activation='relu'),
+    Dense(1)  # Output layer for predicting stock price
+])
+
+# Step 3: Compile the model
+model.compile(optimizer='adam', loss='mean_squared_error')
+
+# Step 4: Train the model
+history = model.fit(x_train, y_train, epochs=20, batch_size=32, validation_data=(x_test, y_test))
+
+# Step 5: Evaluate the model
+test_loss = model.evaluate(x_test, y_test)
+print(f"Test Loss: {test_loss}")
+
+# Step 6: Make predictions
+predicted_prices = model.predict(x_test)
+predicted_prices = scaler.inverse_transform(predicted_prices.reshape(-1, 1))
+
+# Step 7: Visualize the results
+actual_prices = scaler.inverse_transform(y_test.reshape(-1, 1))
+
+plt.figure(figsize=(14, 7))
+plt.plot(actual_prices, color='blue', label='Actual Prices')
+plt.plot(predicted_prices, color='red', label='Predicted Prices')
+plt.title(f"{ticker} Stock Price Prediction using GRU")
+plt.xlabel("Days")
+plt.ylabel("Stock Price")
+plt.legend()
+plt.show()
